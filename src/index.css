@@ -2,95 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Agricultural Theme Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Agricultural Color Palette */
+    --background: 120 30% 97%;
+    --foreground: 120 20% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 120 20% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 120 20% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 120 60% 25%;
+    --primary-foreground: 120 30% 97%;
+    --primary-light: 120 45% 35%;
+    --primary-lighter: 120 30% 50%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 45 40% 85%;
+    --secondary-foreground: 120 20% 8%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 120 20% 92%;
+    --muted-foreground: 120 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 35 100% 55%;
+    --accent-foreground: 35 100% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --earth: 25 60% 45%;
+    --earth-foreground: 25 60% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --sky: 200 80% 60%;
+    --sky-foreground: 200 80% 98%;
 
-    --radius: 0.5rem;
+    --success: 140 70% 40%;
+    --success-foreground: 140 70% 98%;
 
-    --sidebar-background: 0 0% 98%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 45 100% 10%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 84% 98%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --border: 120 20% 88%;
+    --input: 120 20% 88%;
+    --ring: 120 60% 25%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --radius: 0.75rem;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Agricultural Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+    --gradient-earth: linear-gradient(135deg, hsl(var(--earth)) 0%, hsl(var(--accent)) 100%);
+    --gradient-sky: linear-gradient(180deg, hsl(var(--sky)) 0%, hsl(var(--primary-light)) 100%);
+    --gradient-field: linear-gradient(45deg, hsl(var(--primary)) 0%, hsl(var(--success)) 50%, hsl(var(--earth)) 100%);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    /* Shadows */
+    --shadow-farm: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-soft: 0 4px 12px -4px hsl(var(--primary) / 0.1);
 
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 120 40% 96%;
+    --sidebar-foreground: 120 20% 20%;
+    --sidebar-primary: 120 60% 25%;
+    --sidebar-primary-foreground: 120 30% 97%;
+    --sidebar-accent: 120 30% 92%;
+    --sidebar-accent-foreground: 120 20% 20%;
+    --sidebar-border: 120 20% 85%;
+    --sidebar-ring: 120 60% 25%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 120 20% 6%;
+    --foreground: 120 30% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 120 25% 8%;
+    --card-foreground: 120 30% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 120 25% 8%;
+    --popover-foreground: 120 30% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 120 50% 45%;
+    --primary-foreground: 120 20% 6%;
+    --primary-light: 120 40% 55%;
+    --primary-lighter: 120 35% 65%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 120 15% 15%;
+    --secondary-foreground: 120 30% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 120 15% 12%;
+    --muted-foreground: 120 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 35 80% 45%;
+    --accent-foreground: 35 80% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --earth: 25 50% 35%;
+    --earth-foreground: 25 50% 95%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sky: 200 60% 50%;
+    --sky-foreground: 200 60% 95%;
+
+    --success: 140 60% 35%;
+    --success-foreground: 140 60% 95%;
+
+    --warning: 45 80% 45%;
+    --warning-foreground: 45 80% 10%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 70% 95%;
+
+    --border: 120 15% 18%;
+    --input: 120 15% 18%;
+    --ring: 120 50% 45%;
+
+    --sidebar-background: 120 25% 5%;
+    --sidebar-foreground: 120 30% 85%;
+    --sidebar-primary: 120 50% 45%;
+    --sidebar-primary-foreground: 120 20% 6%;
+    --sidebar-accent: 120 20% 10%;
+    --sidebar-accent-foreground: 120 30% 85%;
+    --sidebar-border: 120 15% 15%;
+    --sidebar-ring: 120 50% 45%;
   }
 }
 
