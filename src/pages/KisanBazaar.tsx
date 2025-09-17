@@ -1,304 +1,452 @@
-import Layout from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ShoppingBag, 
-  Search, 
-  MapPin, 
-  Star,
-  TrendingUp,
-  Package,
-  Users,
-  Plus
-} from "lucide-react";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Filter, MapPin, Clock, Star, ShoppingCart, Plus, TrendingUp, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
-const KisanBazaar = () => {
-  const products = [
-    {
-      id: 1,
-      name: "Fresh Tomatoes",
-      category: "Vegetables",
-      price: "₹40/kg",
-      seller: "Ramesh Farm",
-      location: "5 km away",
-      rating: 4.5,
-      inStock: true,
-      image: "tomatoes.jpg",
-      description: "Organic, fresh tomatoes directly from farm"
-    },
-    {
-      id: 2,
-      name: "Wheat Flour",
-      category: "Grains",
-      price: "₹35/kg",
-      seller: "Sharma Mills",
-      location: "8 km away",
-      rating: 4.8,
-      inStock: true,
-      image: "wheat.jpg",
-      description: "Stone ground whole wheat flour"
-    },
-    {
-      id: 3,
-      name: "Organic Fertilizer",
-      category: "Inputs",
-      price: "₹150/bag",
-      seller: "Green Supply Co.",
-      location: "12 km away",
-      rating: 4.3,
-      inStock: false,
-      image: "fertilizer.jpg",
-      description: "100% organic compost fertilizer"
-    },
-    {
-      id: 4,
-      name: "Quality Seeds",
-      category: "Seeds",
-      price: "₹200/kg",
-      seller: "Seed Bank",
-      location: "3 km away",
-      rating: 4.7,
-      inStock: true,
-      image: "seeds.jpg",
-      description: "High yield vegetable seeds"
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  seller: string;
+  location: string;
+  price: number;
+  unit: string;
+  quantity: number;
+  quality: 'premium' | 'good' | 'standard';
+  rating: number;
+  image: string;
+  description: string;
+  harvestDate: string;
+  type: 'sell' | 'buy';
+}
+
+const productsData: Product[] = [
+  {
+    id: '1',
+    name: 'Organic Wheat',
+    category: 'grains',
+    seller: 'राम शर्मा',
+    location: 'Pune, Maharashtra',
+    price: 2400,
+    unit: 'quintal',
+    quantity: 50,
+    quality: 'premium',
+    rating: 4.8,
+    image: '/api/placeholder/300/200',
+    description: 'High-quality organic wheat, chemical-free cultivation',
+    harvestDate: '2024-01-10',
+    type: 'sell'
+  },
+  {
+    id: '2',
+    name: 'Fresh Basmati Rice',
+    category: 'grains',
+    seller: 'Harpreet Singh',
+    location: 'Ludhiana, Punjab',
+    price: 3200,
+    unit: 'quintal',
+    quantity: 100,
+    quality: 'premium',
+    rating: 4.9,
+    image: '/api/placeholder/300/200',
+    description: 'Premium basmati rice, aged for perfect aroma',
+    harvestDate: '2024-01-05',
+    type: 'sell'
+  },
+  {
+    id: '3',
+    name: 'Coconut (Fresh)',
+    category: 'fruits',
+    seller: 'Priya Nair',
+    location: 'Kochi, Kerala',
+    price: 25,
+    unit: 'piece',
+    quantity: 500,
+    quality: 'good',
+    rating: 4.6,
+    image: '/api/placeholder/300/200',
+    description: 'Fresh coconuts from organic farms',
+    harvestDate: '2024-01-12',
+    type: 'sell'
+  },
+  {
+    id: '4',
+    name: 'Cotton (Raw)',
+    category: 'cotton',
+    seller: 'विकास पाटिल',
+    location: 'Nagpur, Maharashtra',
+    price: 5800,
+    unit: 'quintal',
+    quantity: 25,
+    quality: 'good',
+    rating: 4.5,
+    image: '/api/placeholder/300/200',
+    description: 'High-grade raw cotton for textile industry',
+    harvestDate: '2024-01-08',
+    type: 'sell'
+  },
+  {
+    id: '5',
+    name: 'Looking for Tomatoes',
+    category: 'vegetables',
+    seller: 'Amit Traders',
+    location: 'Mumbai, Maharashtra',
+    price: 3000,
+    unit: 'quintal',
+    quantity: 20,
+    quality: 'good',
+    rating: 4.3,
+    image: '/api/placeholder/300/200',
+    description: 'Bulk purchase requirement for fresh tomatoes',
+    harvestDate: '',
+    type: 'buy'
+  }
+];
+
+export default function KisanBazaar() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterLocation, setFilterLocation] = useState('all');
+  const [activeTab, setActiveTab] = useState('buy');
+
+  const filteredProducts = productsData
+    .filter(product => product.type === (activeTab === 'buy' ? 'sell' : 'buy'))
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+      const matchesLocation = filterLocation === 'all' || product.location.includes(filterLocation);
+      
+      return matchesSearch && matchesCategory && matchesLocation;
+    });
+
+  const handleContactSeller = (product: Product) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to contact sellers.",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
 
-  const myListings = [
-    {
-      id: 1,
-      name: "Fresh Milk",
-      price: "₹50/liter",
-      status: "Active",
-      orders: 12,
-      revenue: "₹2,400"
-    },
-    {
-      id: 2,
-      name: "Organic Potatoes",
-      price: "₹30/kg",
-      status: "Sold Out",
-      orders: 8,
-      revenue: "₹1,200"
+    toast({
+      title: "Contact Initiated",
+      description: `Your inquiry has been sent to ${product.seller}. They will contact you soon.`,
+    });
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add items to cart.",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
 
-  const categories = [
-    { name: "All", count: 156 },
-    { name: "Vegetables", count: 45 },
-    { name: "Fruits", count: 32 },
-    { name: "Grains", count: 28 },
-    { name: "Seeds", count: 24 },
-    { name: "Inputs", count: 27 }
-  ];
+    toast({
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+
+  const getQualityColor = (quality: string) => {
+    switch (quality) {
+      case 'premium':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'good':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'standard':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Kisan Bazaar</h1>
-          <p className="text-xl text-muted-foreground">
-            Direct marketplace connecting farmers with buyers
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
+            🛒 Kisan Bazaar
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Direct farmer-to-farmer marketplace for agricultural products
           </p>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="browse" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="browse">Browse Products</TabsTrigger>
-            <TabsTrigger value="sell">My Listings</TabsTrigger>
-          </TabsList>
+        {/* Market Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold">₹2.4L</h3>
+              <p className="text-sm text-muted-foreground">Daily Trading Volume</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold">1,250</h3>
+              <p className="text-sm text-muted-foreground">Active Farmers</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <ShoppingCart className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold">342</h3>
+              <p className="text-sm text-muted-foreground">Products Listed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Star className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold">4.6</h3>
+              <p className="text-sm text-muted-foreground">Average Rating</p>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Browse Products Tab */}
-          <TabsContent value="browse" className="space-y-6">
-            {/* Search Bar */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search products..." 
-                    className="pl-10"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex justify-between items-center">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsTrigger value="buy">Buy Products</TabsTrigger>
+              <TabsTrigger value="sell">Sell Products</TabsTrigger>
+              <TabsTrigger value="requests">Buy Requests</TabsTrigger>
+            </TabsList>
+            
+            {user && (
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                List Product
+              </Button>
+            )}
+          </div>
 
-            {/* Categories */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Badge key={category.name} variant="outline" className="px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground">
-                  {category.name} ({category.count})
-                </Badge>
-              ))}
+          {/* Search and Filters */}
+          <div className="bg-card rounded-lg shadow-sm border p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="grains">Grains</SelectItem>
+                  <SelectItem value="vegetables">Vegetables</SelectItem>
+                  <SelectItem value="fruits">Fruits</SelectItem>
+                  <SelectItem value="cotton">Cotton</SelectItem>
+                  <SelectItem value="spices">Spices</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterLocation} onValueChange={setFilterLocation}>
+                <SelectTrigger>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  <SelectItem value="Maharashtra">Maharashtra</SelectItem>
+                  <SelectItem value="Kerala">Kerala</SelectItem>
+                  <SelectItem value="Punjab">Punjab</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
 
-            {/* Products Grid */}
+          {/* Products Grid */}
+          <TabsContent value="buy" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
-                    <div className="bg-muted h-48 flex items-center justify-center">
-                      <Package className="h-16 w-16 text-muted-foreground" />
-                    </div>
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                    />
                     <Badge 
-                      className={`absolute top-3 right-3 ${
-                        product.inStock 
-                          ? "bg-success text-success-foreground" 
-                          : "bg-destructive text-destructive-foreground"
-                      }`}
+                      className={`absolute top-2 right-2 ${getQualityColor(product.quality)}`}
                     >
-                      {product.inStock ? "In Stock" : "Out of Stock"}
+                      {product.quality}
                     </Badge>
                   </div>
                   
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{product.name}</CardTitle>
-                        <CardDescription>{product.description}</CardDescription>
+                    <CardTitle className="flex items-center justify-between">
+                      {product.name}
+                      <div className="flex items-center">
+                        <Star className="h-4 w-4 fill-primary text-primary mr-1" />
+                        <span className="text-sm">{product.rating}</span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-primary">{product.price}</div>
-                      </div>
-                    </div>
+                    </CardTitle>
+                    <CardDescription>{product.description}</CardDescription>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{product.location}</span>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold text-primary">
+                          ₹{product.price.toLocaleString()}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          per {product.unit}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 fill-current text-accent" />
-                        <span>{product.rating}</span>
+                      
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {product.location}
                       </div>
-                    </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Seller: {product.seller}</span>
+                        <span>Available: {product.quantity} {product.unit}s</span>
+                      </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm text-muted-foreground">Seller: </span>
-                        <span className="font-medium">{product.seller}</span>
-                      </div>
-                      <Badge variant="secondary">{product.category}</Badge>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <Button 
-                        className="flex-1" 
-                        disabled={!product.inStock}
-                        variant={product.inStock ? "default" : "secondary"}
-                      >
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        {product.inStock ? "Buy Now" : "Out of Stock"}
-                      </Button>
+                      {product.harvestDate && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4 mr-2" />
+                          Harvested: {product.harvestDate}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
+
+                  <CardFooter className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleContactSeller(product)}
+                    >
+                      Contact Seller
+                    </Button>
+                    <Button 
+                      className="flex-1"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
-          {/* My Listings Tab */}
-          <TabsContent value="sell" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">+2 from last month</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">45</div>
-                  <p className="text-xs text-muted-foreground">+12 from last month</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₹15,240</div>
-                  <p className="text-xs text-muted-foreground">+20% from last month</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Add New Product Button */}
-            <Card className="bg-gradient-primary text-white">
-              <CardContent className="flex items-center justify-between p-6">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">List a New Product</h3>
-                  <p className="text-primary-foreground/90">Start selling your produce to local buyers</p>
-                </div>
-                <Button size="lg" variant="secondary">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Product
-                </Button>
+          <TabsContent value="sell">
+            <Card>
+              <CardHeader>
+                <CardTitle>List Your Products</CardTitle>
+                <CardDescription>
+                  Sell your agricultural products directly to other farmers and buyers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {user ? (
+                  <div className="text-center py-12">
+                    <Plus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Ready to sell your products?</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create a listing to reach thousands of potential buyers
+                    </p>
+                    <Button size="lg">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Listing
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <h3 className="text-lg font-semibold mb-2">Login Required</h3>
+                    <p className="text-muted-foreground">
+                      Please login to start selling your products
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* My Products */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">My Products</h3>
-              <div className="space-y-4">
-                {myListings.map((listing) => (
-                  <Card key={listing.id}>
-                    <CardContent className="flex items-center justify-between p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                          <Package className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold">{listing.name}</h4>
-                          <p className="text-muted-foreground">{listing.price}</p>
-                        </div>
+          <TabsContent value="requests">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {productsData.filter(p => p.type === 'buy').map((request) => (
+                <Card key={request.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      {request.name}
+                      <Badge>Buy Request</Badge>
+                    </CardTitle>
+                    <CardDescription>{request.description}</CardDescription>
+                  </CardHeader>
+
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-green-600">
+                          ₹{request.price.toLocaleString()}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          per {request.unit}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-6">
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{listing.orders}</div>
-                          <div className="text-sm text-muted-foreground">Orders</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{listing.revenue}</div>
-                          <div className="text-sm text-muted-foreground">Revenue</div>
-                        </div>
-                        <Badge 
-                          variant={listing.status === "Active" ? "default" : "secondary"}
-                          className={listing.status === "Active" ? "bg-success text-success-foreground" : ""}
-                        >
-                          {listing.status}
-                        </Badge>
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
+                      
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {request.location}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Buyer: {request.seller}</span>
+                        <span>Needed: {request.quantity} {request.unit}s</span>
+                      </div>
+                    </div>
+                  </CardContent>
+
+                  <CardFooter>
+                    <Button 
+                      className="w-full"
+                      onClick={() => handleContactSeller(request)}
+                    >
+                      Contact Buyer
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-    </Layout>
-  );
-};
 
-export default KisanBazaar;
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">
+              No products found matching your criteria.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

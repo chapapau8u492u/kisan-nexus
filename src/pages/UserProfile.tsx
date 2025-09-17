@@ -1,255 +1,371 @@
-import Layout from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  User, 
-  Edit, 
-  MapPin, 
-  Phone, 
-  Mail,
-  Calendar,
-  Leaf,
-  TrendingUp,
-  Award,
-  Bell,
-  Shield,
-  Download
-} from "lucide-react";
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { User, MapPin, Phone, Mail, Globe, Sprout, TrendingUp, Calendar, Bell, Settings, Key, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { geminiAI } from '@/lib/gemini';
 
-const UserProfile = () => {
-  const userInfo = {
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@email.com",
-    phone: "+91 9876543210",
-    location: "Village Rampur, District Meerut, UP",
-    farmSize: "5 acres",
-    mainCrops: ["Wheat", "Rice", "Sugarcane"],
-    experience: "15 years",
-    memberSince: "2022-03-15"
+export default function UserProfile() {
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    location: user?.location || '',
+    language: user?.language || 'hindi',
+    farmSize: user?.farmSize || 0,
+    crops: user?.crops || []
+  });
+
+  const handleSave = () => {
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been updated successfully.",
+    });
+    setIsEditing(false);
   };
 
-  const stats = [
-    {
-      label: "Crops Monitored",
-      value: "12",
-      icon: Leaf,
-      color: "text-success"
-    },
-    {
-      label: "Disease Detections",
-      value: "8",
-      icon: TrendingUp,
-      color: "text-warning"
-    },
-    {
-      label: "Schemes Applied",
-      value: "5",
-      icon: Award,
-      color: "text-primary"
+  const handleSaveApiKey = () => {
+    if (apiKey.trim()) {
+      geminiAI.updateAPIKey(apiKey.trim());
+      toast({
+        title: "API Key Saved",
+        description: "Your Gemini API key has been saved and will be used for AI analysis.",
+      });
+      setApiKey('');
+      setShowApiKey(false);
     }
+  };
+
+  const handleRemoveApiKey = () => {
+    geminiAI.removeAPIKey();
+    toast({
+      title: "API Key Removed",
+      description: "Removed your custom API key. Using default key now.",
+    });
+  };
+
+  const getCurrentApiKey = () => {
+    const saved = localStorage.getItem('gemini_api_key');
+    return saved ? `${saved.substring(0, 8)}...${saved.substring(saved.length - 4)}` : 'Using default key';
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Please Login</h1>
+          <p className="text-muted-foreground">You need to be logged in to view your profile.</p>
+          <br />
+           
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="border-2 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  onClick={() => {
+                    // Trigger login modal - find the app component
+                    const appRoot = document.getElementById('root');
+                    if (appRoot) {
+                      const event = new CustomEvent('openLoginModal');
+                      appRoot.dispatchEvent(event);
+                    }
+                  }}
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  Get Started Free
+                </Button>
+              
+        </div>
+      </div>
+    );
+  }
+
+  // Mock data for demonstration
+  const recentActivity = [
+    { id: 1, type: 'disease-check', description: 'Checked tomato leaf disease', date: '2024-01-15', result: 'Early Blight detected' },
+    { id: 2, type: 'machinery-booking', description: 'Booked John Deere tractor', date: '2024-01-13', result: 'Booking confirmed' },
+    { id: 3, type: 'scheme-application', description: 'Applied for PM-KISAN scheme', date: '2024-01-12', result: 'Application submitted' }
   ];
 
-  const recentActivity = [
-    {
-      action: "Disease Detection",
-      details: "Analyzed tomato leaf - Late blight detected",
-      date: "2 hours ago",
-      type: "detection"
-    },
-    {
-      action: "Weather Alert",
-      details: "Heavy rain warning for next 2 days",
-      date: "1 day ago",
-      type: "weather"
-    },
-    {
-      action: "Scheme Application",
-      details: "Applied for PM-KISAN scheme",
-      date: "3 days ago",
-      type: "scheme"
-    },
-    {
-      action: "Machinery Rental",
-      details: "Booked tractor for tomorrow",
-      date: "5 days ago",
-      type: "machinery"
-    }
+  const notifications = [
+    { id: 1, type: 'weather', message: 'Heavy rain expected in your area tomorrow', priority: 'high' },
+    { id: 2, type: 'scheme', message: 'New subsidy scheme available for organic farmers', priority: 'medium' },
+    { id: 3, type: 'machinery', message: 'Your booked tractor is ready for pickup', priority: 'high' },
+    { id: 4, type: 'ai-insight', message: 'Optimal sowing time for cotton approaching', priority: 'low' }
   ];
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">User Profile</h1>
-          <p className="text-xl text-muted-foreground">
-            Manage your account and farming information
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Profile Dashboard</h1>
+            <p className="text-muted-foreground">Manage your account and farm information</p>
+          </div>
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
         </div>
 
-        {/* Profile Overview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center">
-                  <User className="h-10 w-10 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl">{userInfo.name}</CardTitle>
-                  <CardDescription className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>{userInfo.location}</span>
-                  </CardDescription>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <Badge variant="secondary">
-                      {userInfo.farmSize} Farm
-                    </Badge>
-                    <Badge variant="outline">
-                      {userInfo.experience} Experience
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">This month</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="personal" className="w-full">
+        <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="personal">Personal Info</TabsTrigger>
-            <TabsTrigger value="farming">Farming Details</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          {/* Personal Info Tab */}
-          <TabsContent value="personal" className="space-y-6">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Profile Summary */}
+              <Card>
+                <CardHeader className="text-center">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-10 w-10 text-primary" />
+                  </div>
+                  <CardTitle>{user.name}</CardTitle>
+                  <CardDescription className="flex items-center justify-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {user.location}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Farm Size</span>
+                      <span className="font-medium">{user.farmSize} acres</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Crops</span>
+                      <span className="font-medium">{user.crops.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Language</span>
+                      <span className="font-medium capitalize">{user.language}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Farm Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2" />
+                    Farm Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Yield Efficiency</span>
+                      <span>78%</span>
+                    </div>
+                    <Progress value={78} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Soil Health</span>
+                      <span>85%</span>
+                    </div>
+                    <Progress value={85} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Water Usage</span>
+                      <span>62%</span>
+                    </div>
+                    <Progress value={62} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Sprout className="h-4 w-4 mr-2" />
+                    Check Crop Health
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Check Growth Rate
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Machinery
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Globe className="h-4 w-4 mr-2" />
+                    Find Schemes
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Notifications */}
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your personal details</CardDescription>
+                <CardTitle className="flex items-center">
+                  <Bell className="h-5 w-5 mr-2" />
+                  Recent Notifications
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" value={userInfo.name} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={userInfo.email} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" value={userInfo.phone} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="experience">Farming Experience</Label>
-                    <Input id="experience" value={userInfo.experience} />
-                  </div>
+              <CardContent>
+                <div className="space-y-3">
+                  {notifications.map((notification) => (
+                    <div key={notification.id} className="flex items-start space-x-3 p-3 rounded-lg bg-secondary/10">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        notification.priority === 'high' ? 'bg-red-500' : 
+                        notification.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                      }`} />
+                      <div className="flex-1">
+                        <p className="text-sm">{notification.message}</p>
+                        <Badge variant="outline" className="text-xs mt-1 capitalize">
+                          {notification.type}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Farm Location</Label>
-                  <Input id="location" value={userInfo.location} />
-                </div>
-                <Button>Save Changes</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Farming Details Tab */}
-          <TabsContent value="farming" className="space-y-6">
+          {/* Profile Tab */}
+          <TabsContent value="profile">
             <Card>
               <CardHeader>
-                <CardTitle>Farming Information</CardTitle>
-                <CardDescription>Manage your farm and crop details</CardDescription>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>Update your personal and farm details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="farmSize">Farm Size</Label>
-                    <Input id="farmSize" value={userInfo.farmSize} />
+                  <div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      disabled={!isEditing}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="farmType">Farm Type</Label>
-                    <Input id="farmType" placeholder="e.g., Organic, Traditional" />
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="language">Preferred Language</Label>
+                    <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})} disabled={!isEditing}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hindi">Hindi</SelectItem>
+                        <SelectItem value="marathi">Marathi</SelectItem>
+                        <SelectItem value="malayalam">Malayalam</SelectItem>
+                        <SelectItem value="punjabi">Punjabi</SelectItem>
+                        <SelectItem value="english">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="farmSize">Farm Size (acres)</Label>
+                    <Input
+                      id="farmSize"
+                      type="number"
+                      value={formData.farmSize}
+                      onChange={(e) => setFormData({...formData, farmSize: Number(e.target.value)})}
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="crops">Main Crops</Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {userInfo.mainCrops.map((crop, index) => (
-                      <Badge key={index} variant="outline">
+
+                <div>
+                  <Label>Current Crops</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {user.crops.map((crop, index) => (
+                      <Badge key={index} variant="secondary">
                         {crop}
                       </Badge>
                     ))}
                   </div>
-                  <Input id="crops" placeholder="Add new crop" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="irrigation">Irrigation Method</Label>
-                  <Input id="irrigation" placeholder="e.g., Drip, Sprinkler, Canal" />
+
+                <div className="flex space-x-2">
+                  {isEditing ? (
+                    <>
+                      <Button onClick={handleSave}>Save Changes</Button>
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="equipment">Farm Equipment</Label>
-                  <Textarea id="equipment" placeholder="List your farm equipment" />
-                </div>
-                <Button>Update Farming Details</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-6">
+          <TabsContent value="activity">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your recent actions on AgroInteract</CardDescription>
+                <CardDescription>Your farming activities and platform usage</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
-                      <div className={`w-2 h-2 rounded-full ${
-                        activity.type === "detection" ? "bg-warning" :
-                        activity.type === "weather" ? "bg-sky" :
-                        activity.type === "scheme" ? "bg-success" : "bg-earth"
-                      }`} />
-                      <div className="flex-1">
-                        <div className="font-medium">{activity.action}</div>
-                        <div className="text-muted-foreground text-sm">{activity.details}</div>
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-lg border">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        {activity.type === 'disease-check' && <Sprout className="h-5 w-5 text-primary" />}
+                        {activity.type === 'machinery-booking' && <Calendar className="h-5 w-5 text-primary" />}
+                        {activity.type === 'scheme-application' && <Globe className="h-5 w-5 text-primary" />}
                       </div>
-                      <div className="text-sm text-muted-foreground">{activity.date}</div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{activity.description}</h4>
+                        <p className="text-sm text-muted-foreground">{activity.result}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{activity.date}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -258,65 +374,118 @@ const UserProfile = () => {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Bell className="h-5 w-5" />
-                  <span>Notification Settings</span>
-                </CardTitle>
-                <CardDescription>Manage your notification preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+          <TabsContent value="settings">
+            <div className="space-y-6">
+              {/* API Key Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Key className="h-5 w-5 mr-2" />
+                    Gemini AI API Key
+                  </CardTitle>
+                  <CardDescription>
+                    Use your own Gemini API key for unlimited AI analysis or rely on our default key
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <div className="font-medium">Weather Alerts</div>
-                    <div className="text-sm text-muted-foreground">Get notified about weather changes</div>
+                    <Label>Current API Key Status</Label>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {getCurrentApiKey()}
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm">Enable</Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Disease Alerts</div>
-                    <div className="text-sm text-muted-foreground">Notifications for crop diseases in your area</div>
-                  </div>
-                  <Button variant="outline" size="sm">Enable</Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Scheme Updates</div>
-                    <div className="text-sm text-muted-foreground">New government schemes and deadlines</div>
-                  </div>
-                  <Button variant="outline" size="sm">Enable</Button>
-                </div>
-              </CardContent>
-            </Card>
+                  
+                  {showApiKey ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="api-key">Enter your Gemini API Key</Label>
+                        <Input
+                          id="api-key"
+                          placeholder="AIzaSy..."
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                          type="password"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Get your free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button onClick={handleSaveApiKey}>Save API Key</Button>
+                        <Button variant="outline" onClick={() => {setShowApiKey(false); setApiKey('');}}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button variant="outline" onClick={() => setShowApiKey(true)}>
+                        Add API Key
+                      </Button>
+                      {localStorage.getItem('gemini_api_key') && (
+                        <Button variant="outline" onClick={handleRemoveApiKey}>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remove Custom Key
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Privacy & Security</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download My Data
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Change Password
-                </Button>
-                <Button variant="destructive" className="w-full justify-start">
-                  Delete Account
-                </Button>
-              </CardContent>
-            </Card>
+              {/* Other Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="h-5 w-5 mr-2" />
+                    Preferences
+                  </CardTitle>
+                  <CardDescription>Manage your preferences and notifications</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <h3 className="font-medium mb-3">Notification Preferences</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" defaultChecked className="rounded" />
+                        <span className="text-sm">Weather alerts</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" defaultChecked className="rounded" />
+                        <span className="text-sm">Scheme notifications</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" />
+                        <span className="text-sm">Machinery reminders</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" defaultChecked className="rounded" />
+                        <span className="text-sm">AI insights</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-3">Privacy Settings</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" defaultChecked className="rounded" />
+                        <span className="text-sm">Share farm data for insights</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" />
+                        <span className="text-sm">Allow location tracking</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <Button>Save Settings</Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </div>
   );
-};
-
-export default UserProfile;
+}

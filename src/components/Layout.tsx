@@ -1,104 +1,129 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
-  Home, 
+  Menu, 
   Leaf, 
+  Home, 
+  Camera, 
+  BarChart3, 
   Cloud, 
-  Truck, 
-  ShoppingBag, 
-  FileText, 
+  Tractor, 
+  FileText,
   User,
-  Menu,
-  X
+  LogIn
 } from "lucide-react";
-import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginModal from "@/components/LoginModal";
+import React from "react";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+const navItems = [
+  { name: "Home", href: "/", icon: Home },
+  { name: "Disease Detection", href: "/disease-detection", icon: Camera },
+  
+  { name: "Weather", href: "/weather", icon: Cloud },
+  { name: "Machinery", href: "/machinery", icon: Tractor },
+  { name: "Schemes", href: "/schemes", icon: FileText },
+  { name: "Profile", href: "/profile", icon: User },
+];
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
-  const navigation = [
-    { name: "Home", href: "/home", icon: Home },
-    { name: "Disease Detection", href: "/disease-detection", icon: Leaf },
-    { name: "Weather", href: "/weather", icon: Cloud },
-    { name: "Machinery", href: "/machinery", icon: Truck },
-    { name: "Kisan Bazaar", href: "/bazaar", icon: ShoppingBag },
-    { name: "Schemes", href: "/schemes", icon: FileText },
-    { name: "Profile", href: "/profile", icon: User },
-  ];
+  const isActive = (href: string) => location.pathname === href;
+
+  // Listen for login modal open events
+  React.useEffect(() => {
+    const handleOpenLogin = () => setLoginModalOpen(true);
+    const rootElement = document.getElementById('root');
+    
+    if (rootElement) {
+      rootElement.addEventListener('openLoginModal', handleOpenLogin);
+      return () => rootElement.removeEventListener('openLoginModal', handleOpenLogin);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex h-16 items-center justify-between px-4 md:px-6">
-          <Link to="/home" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary">
               <Leaf className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-primary">AgroInteract</span>
+            <span className="text-xl font-bold text-primary">Farmer_Connect</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => {
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.href;
               return (
-                <Button
+                <Link
                   key={item.name}
-                  variant={isActive ? "default" : "ghost"}
-                  size="sm"
-                  asChild
-                  className={isActive ? "bg-primary text-primary-foreground" : ""}
+                  to={item.href}
+                  className={`flex items-center space-x-1 lg:space-x-2 text-sm font-medium transition-colors hover:text-primary ${
+                    isActive(item.href) 
+                      ? "text-primary border-b-2 border-primary pb-1" 
+                      : "text-muted-foreground"
+                  }`}
                 >
-                  <Link to={item.href} className="flex items-center space-x-2">
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </Button>
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden lg:inline">{item.name}</span>
+                </Link>
               );
             })}
+            
+            {/* Auth Button */}
+            {user ? (
+              <Button variant="outline" size="sm" onClick={logout}>
+                Logout
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setLoginModalOpen(true)}>
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </Button>
+            )}
           </nav>
 
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-card">
-            <nav className="flex flex-col p-4 space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Button
-                    key={item.name}
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
-                    asChild
-                    className={`justify-start ${isActive ? "bg-primary text-primary-foreground" : ""}`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Link to={item.href} className="flex items-center space-x-2">
-                      <Icon className="h-4 w-4" />
+          {/* Mobile Menu Button */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <div className="flex flex-col space-y-4 mt-8">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 text-sm font-medium p-3 rounded-lg transition-colors ${
+                        isActive(item.href)
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
                       <span>{item.name}</span>
                     </Link>
-                  </Button>
-                );
-              })}
-            </nav>
-          </div>
-        )}
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -107,15 +132,59 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-muted/30 py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground">
-            © 2024 AgroInteract. Empowering farmers with technology.
-          </p>
+      <footer className="border-t bg-muted/30">
+        <div className="container py-6 md:py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-primary">
+                  <Leaf className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-bold text-primary">Farmer_Connect</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Empowering farmers with technology and data-driven insights for better agriculture.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Features</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>Disease Detection</li>
+                
+                <li>Weather Insights</li>
+                <li>Machinery Rental</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Support</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>Help Center</li>
+                <li>Contact Us</li>
+                <li>Government Schemes</li>
+                <li>Training Resources</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Connect</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>Community Forum</li>
+                <li>Expert Network</li>
+                <li>Local Dealers</li>
+                <li>Success Stories</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+            <p>&copy; 2024 Farmer_Connect. Built for Smart India Hackathon.</p>
+          </div>
         </div>
       </footer>
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={loginModalOpen} 
+        onClose={() => setLoginModalOpen(false)} 
+      />
     </div>
   );
-};
-
-export default Layout;
+}
